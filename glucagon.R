@@ -125,7 +125,7 @@ level_order <- tibble::deframe(brand[, sum(rxTotal), by = `Glucagon Type`]) |>
   sort() |>
   names()
 brand <- brand[, `Glucagon Type` := factor(`Glucagon Type`, levels = level_order, ordered = TRUE,
-                                           labels = c("Dasiglucagon, Autoinjector",
+                                           labels = c("Dasiglucagon, Auto-Injector",
                                                       "Glucagon, Pre-Filled Syringe",
                                                       "Glucagon, Auto-Injector",
                                                       "Glucagon, Nasal Spray",
