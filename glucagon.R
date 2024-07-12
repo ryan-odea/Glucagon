@@ -21,7 +21,7 @@ NDC <- c("00002614501", "00002614502", "00002614511", "00002614527", "0000280310
 #Most recent data pull was Aug 10 2023.
 #As of Dec 1 2023, it appears that half of the data from 2022 has been rescinded or removed
 #Data were updated to 2023, subbing in the originally pulled data (on Aug 10, 2023) from 2022 as it would appear that ~half of the 2022 data has been lost when querying the medicaid API
-if(!file.exists("output_raw_2023.csv")){
+if(!file.exists("Cleaned Data/output_raw.csv")){
   if (!dir.exists("Data")) {
     dir.create("Data")
     message("Data Directory Created")
@@ -129,11 +129,12 @@ brand <- brand[, `Glucagon Type` := factor(`Glucagon Type`, levels = level_order
                                                       "Glucagon, Pre-Filled Syringe",
                                                       "Glucagon, Auto-Injector",
                                                       "Glucagon, Nasal Spray",
-                                                      "Glucagon, Unmixed Syringe"))]
+                                                      "Glucagon, Unmixed Syringe"))
+               ][, pct := rxTotal/sum(rxTotal)*100, by = "Year"]
 setorder(brand, Year)
 write.csv(brand, "Cleaned Data/brandpct.csv")
 write.csv(brand[, .(total = sum(rxTotal)), by = "Year"
-                ][, pctChange := round((total-shift(total))/shift(total)*100)], "total.csv")
+                ][, pctChange := round((total-shift(total))/shift(total)*100)], "Cleaned Data/total.csv")
 
 p1 <- ggplot(brand, aes(x = Year, weight = rxTotal, group = `Glucagon Type`)) + 
   geom_bar(aes(fill = `Glucagon Type`), position = "fill") + 
