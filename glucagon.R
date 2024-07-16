@@ -80,6 +80,7 @@ data <- fread("Cleaned Data/output_raw.csv", colClasses = c("ndc" = "character")
                                                                      ][`Radiology Use` == "N"
                                                                        ][utilization_type == "FFSU"
                                                                          ][year > 2011]
+
 # Prescription Reimbuirsed & Count =============================================
 #Inflation ====
 url <- "https://www.minneapolisfed.org/about-us/monetary-policy/inflation-calculator/consumer-price-index-1913-"
@@ -94,7 +95,15 @@ Rx <- data[, .(rxCount = sum(number_of_prescriptions),
            ][inflation, on = "year"
              ][, amtInflation := amtReimbursed*multiplier
                ]
-#write.csv(Rx, "reimbursements2023.csv")
+
+costdata <- data[, .(total_reimbursement = sum(medicaid_amount_reimbursed),
+                     nRx = sum(number_of_prescriptions)), by = c("year", "Glucagon type")
+                 ][inflation, on = "year"
+                   ][, amtInflation := total_reimbursement*multiplier
+                     ][, ppRx := amtInflation/nRx
+                       ][, cpi := NULL]
+#write.csv(Rx, "Cleaned Data/reimbursements2023.csv")
+#write.csv(costdata, "Cleaned Data/costData.csv", row.names = FALSE)
 #Rx <- read.csv("reimbursements.csv")
 
 
