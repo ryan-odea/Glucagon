@@ -69,17 +69,18 @@ if(!file.exists("Cleaned Data/output_raw.csv")){
     out <- DT[state == "XX" &
                 !is.na(units_reimbursed) & 
                 eval(suppression_used) == "FALSE" & 
-                ndc %in% NDC]
+                (ndc %in% NDC | product_name %like% "HUMALOG"| product_name %like% "NOVOLOG")]
     return(out)
   })
-  write.csv(rbindlist(data_list), file = "output_raw2023.csv", row.names = FALSE)
+  write.csv(rbindlist(data_list), file = "Cleaned Data/output_raw2023.csv", row.names = FALSE)
 }
 # Read-In and Plot =============================================================
 key <- fread("Cleaned Data/key.csv")[, NDC := gsub("-", "", NDC)]
-data <- fread("Cleaned Data/output_raw.csv", colClasses = c("ndc" = "character"))[key, on = c("ndc" = "NDC")
-                                                                     ][`Radiology Use` == "N"
-                                                                       ][utilization_type == "FFSU"
-                                                                         ][year > 2011]
+data <- fread("Cleaned Data/output_raw2023.csv", colClasses = c("ndc" = "character"))[key, on = c("ndc" = "NDC")
+                                                                     ][ndc %in% NDC, 
+                                                                       ][`Radiology Use` == "N"
+                                                                         ][utilization_type == "FFSU"
+                                                                           ][year > 2011]
 
 # Prescription Reimbuirsed & Count =============================================
 #Inflation ====
@@ -88,10 +89,11 @@ raw_tbl <- as.data.table(html_table(read_html(url))[[1]])
 inflation <- setDT(raw_tbl)[Year > 2011, .(cpi = `Annual Average CPI(-U)`,
                                            year = Year)
                             ][, multiplier := as.numeric(raw_tbl[Year == 2023]$`Annual Average CPI(-U)`)/cpi, by = year
-                              ][, year := as.numeric(year)]
+                              ][, year := as.numeric(year)
+                                ][year != 2024]
 
 Rx <- data[, .(rxCount = sum(number_of_prescriptions),
-               amtReimbursed = sum(total_amount_reimbursed)), by = c("year")
+               amtReimbursed = sum(total_amount_reimbursed)), by = c("year", "Glucagon type")
            ][inflation, on = "year"
              ][, amtInflation := amtReimbursed*multiplier
                ]
@@ -107,23 +109,36 @@ costdata <- data[, .(total_reimbursement = sum(medicaid_amount_reimbursed),
 #Rx <- read.csv("reimbursements.csv")
 
 
-p1 <- ggplot(Rx, aes(x = year, y = rxCount)) + 
-  geom_line(aes(color = "Prescription Count")) + 
-  geom_point(alpha = .5, aes(color = "Prescription Count")) +
-  geom_line(aes(y = amtInflation/3e2, color = "Amount Reimbursed")) + 
-  geom_point(aes(y = amtInflation/3e2, color = "Amount Reimbursed")) +
+p1 <- ggplot(unique(rbind(Rx, copy(Rx)[, `:=` (rxCount = sum(rxCount),
+                        `Glucagon type` = "Total"), by = "year"])), aes(x = year, y = rxCount, col = `Glucagon type`)) + 
+  geom_line() + 
+  geom_point(alpha = .5) +
   scale_x_continuous(breaks = 2012:2023) + 
-  scale_y_continuous(labels = scales::unit_format(unit = "K", scale = 1e-3), 
-                     sec.axis = sec_axis(~.*3e-4, name = "Amount Reimbursed\n(Millions USD)",
-                                         labels = scales::label_dollar(scale_cut = scales::cut_short_scale()))) + 
   theme_light() + 
   labs(color = "", y = "Prescription Count\n(Thousands)", x = "Year") + 
   theme(legend.position = "bottom",
         text = element_text(size = 16)) + 
   geom_vline(xintercept = 2019, col = "black", linetype = "dashed") +
-  annotate("text", label = "Glucagon nasal spray\n introduced", x = 2020.5, y = 1.13e5, size = 5)
+  annotate("text", label = "Glucagon nasal spray\n introduced", x = 2020.5, y = 1.13e5, size = 5) + 
+  guides(color=guide_legend(nrow=2, byrow=TRUE)) 
+ggsave("Figures/RxCount.png", p1, height = 8, width = 10, dpi = 300)
 
-ggsave("Figures/reimburse.png", p1, height = 8, width = 10, dpi = 300)
+p1.5 <- ggplot(unique(rbind(Rx, copy(Rx)[, `:=` (amtInflation = sum(amtInflation),
+                                         `Glucagon type` = "Total"), by = "year"])), 
+       aes(x = year, y = amtInflation, col = `Glucagon type`)) + 
+  geom_line() + 
+  geom_point(alpha = .5) +
+  scale_x_continuous(breaks = 2012:2023) + 
+  theme_light() + 
+  labs(color = "", y = "Medicaid Reimbursement\n(Millions)", x = "Year") + 
+  theme(legend.position = "bottom",
+        text = element_text(size = 16)) + 
+  geom_vline(xintercept = 2019, col = "black", linetype = "dashed") +
+  scale_y_continuous(labels = scales::unit_format(unit = "M", scale = 1e-6)) + 
+  annotate("text", label = "Glucagon nasal spray\n introduced", x = 2020.5, y = 4e7, size = 5) + 
+  guides(color=guide_legend(nrow=2, byrow=TRUE)) 
+
+ggsave("Figures/amtReimbursed.png", p1.5, height = 8, width = 10, dpi = 300)
 
 # Brand Percentage =============================================================
 brand <- data[, rxTotal := sum(number_of_prescriptions), by = c("year", "Glucagon type")
@@ -163,3 +178,17 @@ p1 <- ggplot(brand, aes(x = Year, weight = rxTotal, group = `Glucagon Type`)) +
 
 #p2 <- p1 + ggtexttable(brand, rows = NULL, theme = ttheme(base_size = 12))
 ggsave("Figures/pct.png", p1,  height = 10, width = 9, dpi = 300)
+
+
+
+# Analogs (Reviewer Comment Response)
+analog <- fread("Cleaned Data/output_raw2023.csv", colClasses = c("ndc" = "character"))[product_name %like% "HUMALOG" | product_name %like% "NOVOLOG", 
+                                                                                        ][utilization_type == "FFSU"
+                                                                                          ][year > 2011, 
+                                                                                            ][, analog := ifelse(product_name %like% "NOVOLOG", "Novolog", "Humalog")
+                                                                                              ][, .(rxCount = sum(number_of_prescriptions),
+                                                                                                    amtReimbursed = sum(total_amount_reimbursed)), by = c("year", "analog")
+                                                                                                ][inflation, on = "year"
+                                                                                                  ][, amtInflation := amtReimbursed*multiplier
+                                                                                                    ][year <= 2023, ]
+write.csv(analog, "Cleaned Data/analogs.csv", row.names = FALSE)
