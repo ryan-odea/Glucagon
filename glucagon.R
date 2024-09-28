@@ -185,10 +185,7 @@ ggsave("Figures/pct.png", p1,  height = 10, width = 9, dpi = 300)
 analog <- fread("Cleaned Data/output_raw2023.csv", colClasses = c("ndc" = "character"))[product_name %like% "HUMALOG" | product_name %like% "NOVOLOG", 
                                                                                         ][utilization_type == "FFSU"
                                                                                           ][year > 2011, 
-                                                                                            ][, analog := ifelse(product_name %like% "NOVOLOG", "Novolog", "Humalog")
-                                                                                              ][, .(rxCount = sum(number_of_prescriptions),
-                                                                                                    amtReimbursed = sum(total_amount_reimbursed)), by = c("year", "analog")
-                                                                                                ][inflation, on = "year"
-                                                                                                  ][, amtInflation := amtReimbursed*multiplier
-                                                                                                    ][year <= 2023, ]
+                                                                                            ][, .(rxHumaNovolog = sum(number_of_prescriptions)), by = c("year")
+                                                                                              ][Rx[, .(rxGlucagon = sum(rxCount)), by = "year"], on = "year"
+                                                                                                ][, `Gluc/HumaNovolog` := rxGlucagon / rxHumaNovolog]
 write.csv(analog, "Cleaned Data/analogs.csv", row.names = FALSE)
