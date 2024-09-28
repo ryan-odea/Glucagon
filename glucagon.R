@@ -110,7 +110,8 @@ costdata <- data[, .(total_reimbursement = sum(medicaid_amount_reimbursed),
 
 
 p1 <- ggplot(unique(rbind(Rx, copy(Rx)[, `:=` (rxCount = sum(rxCount),
-                        `Glucagon type` = "Total"), by = "year"])), aes(x = year, y = rxCount, col = `Glucagon type`)) + 
+                        `Glucagon type` = "Total"), by = "year"]))[!(`Glucagon type` != "Total" & year < 2019), ], 
+       aes(x = year, y = rxCount, col = `Glucagon type`)) + 
   geom_line() + 
   geom_point(alpha = .5) +
   scale_x_continuous(breaks = 2012:2023) + 
@@ -118,13 +119,13 @@ p1 <- ggplot(unique(rbind(Rx, copy(Rx)[, `:=` (rxCount = sum(rxCount),
   labs(color = "", y = "Prescription Count\n(Thousands)", x = "Year") + 
   theme(legend.position = "bottom",
         text = element_text(size = 16)) + 
+  scale_y_continuous(labels = scales::unit_format(unit = "k", scale = 1e-3)) + 
   geom_vline(xintercept = 2019, col = "black", linetype = "dashed") +
-  annotate("text", label = "Glucagon nasal spray\n introduced", x = 2020.5, y = 1.13e5, size = 5) + 
   guides(color=guide_legend(nrow=2, byrow=TRUE)) 
 ggsave("Figures/RxCount.png", p1, height = 8, width = 10, dpi = 300)
 
 p1.5 <- ggplot(unique(rbind(Rx, copy(Rx)[, `:=` (amtInflation = sum(amtInflation),
-                                         `Glucagon type` = "Total"), by = "year"])), 
+                                         `Glucagon type` = "Total"), by = "year"]))[!(`Glucagon type` != "Total" & year < 2019), ], 
        aes(x = year, y = amtInflation, col = `Glucagon type`)) + 
   geom_line() + 
   geom_point(alpha = .5) +
@@ -135,7 +136,6 @@ p1.5 <- ggplot(unique(rbind(Rx, copy(Rx)[, `:=` (amtInflation = sum(amtInflation
         text = element_text(size = 16)) + 
   geom_vline(xintercept = 2019, col = "black", linetype = "dashed") +
   scale_y_continuous(labels = scales::unit_format(unit = "M", scale = 1e-6)) + 
-  annotate("text", label = "Glucagon nasal spray\n introduced", x = 2020.5, y = 4e7, size = 5) + 
   guides(color=guide_legend(nrow=2, byrow=TRUE)) 
 
 ggsave("Figures/amtReimbursed.png", p1.5, height = 8, width = 10, dpi = 300)
