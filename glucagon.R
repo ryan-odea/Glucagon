@@ -110,7 +110,7 @@ costdata <- data[, .(total_reimbursement = sum(medicaid_amount_reimbursed),
 
 
 p1 <- ggplot(unique(rbind(Rx, copy(Rx)[, `:=` (rxCount = sum(rxCount),
-                        `Glucagon type` = "Total"), by = "year"]))[!(`Glucagon type` != "Total" & year < 2019), ], 
+                        `Glucagon type` = "Total"), by = "year"]))[!(`Glucagon type` == "Total" & year < 2019), ], 
        aes(x = year, y = rxCount, col = `Glucagon type`)) + 
   geom_line() + 
   geom_point(alpha = .5) +
@@ -122,10 +122,10 @@ p1 <- ggplot(unique(rbind(Rx, copy(Rx)[, `:=` (rxCount = sum(rxCount),
   scale_y_continuous(labels = scales::unit_format(unit = "k", scale = 1e-3)) + 
   geom_vline(xintercept = 2019, col = "black", linetype = "dashed") +
   guides(color=guide_legend(nrow=2, byrow=TRUE)) 
-ggsave("Figures/RxCount.png", p1, height = 8, width = 10, dpi = 300)
+ggsave("Figures/RxCount.svg", p1, height = 8, width = 10, dpi = 300)
 
 p1.5 <- ggplot(unique(rbind(Rx, copy(Rx)[, `:=` (amtInflation = sum(amtInflation),
-                                         `Glucagon type` = "Total"), by = "year"]))[!(`Glucagon type` != "Total" & year < 2019), ], 
+                                         `Glucagon type` = "Total"), by = "year"]))[!(`Glucagon type` == "Total" & year < 2019), ], 
        aes(x = year, y = amtInflation, col = `Glucagon type`)) + 
   geom_line() + 
   geom_point(alpha = .5) +
@@ -138,7 +138,7 @@ p1.5 <- ggplot(unique(rbind(Rx, copy(Rx)[, `:=` (amtInflation = sum(amtInflation
   scale_y_continuous(labels = scales::unit_format(unit = "M", scale = 1e-6)) + 
   guides(color=guide_legend(nrow=2, byrow=TRUE)) 
 
-ggsave("Figures/amtReimbursed.png", p1.5, height = 8, width = 10, dpi = 300)
+ggsave("Figures/amtReimbursed.svg", p1.5, height = 8, width = 10, dpi = 300)
 
 # Brand Percentage =============================================================
 brand <- data[, rxTotal := sum(number_of_prescriptions), by = c("year", "Glucagon type")
