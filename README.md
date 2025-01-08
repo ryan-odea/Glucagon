@@ -1,6 +1,6 @@
 # Utilization and Reimbursement of Glucagon Products for Severe Hypoglycemia in Medicaid: 2012-2023
 ## About
-This serves as the code (and some data) repository for 'Utilization and Reimbursement of Glucagon Products for Severe Hypoglycemia in Medicaid: 2012-2023' [LINK AND DOI HERE] authored by Noah M. Feder, Ryan O'Dea, Dr. Margaret Zupa, and Dr. Jing Luo.
+This serves as the code (and some data) repository for [Prescriptions and Reimbursement of Glucagon Products for Severe Hypoglycemia in Medicaid](https://jamanetwork.com/journals/jama/article-abstract/2828912) authored by Noah M. Feder, Ryan O'Dea, Dr. Margaret Zupa, and Dr. Jing Luo.
 
 ## Using the provided Rscript and Data
 Within this repository, you will find the R script [glucagon.R](https://github.com/ryan-odea/Glucagon/blob/main/glucagon.R) which will: 
